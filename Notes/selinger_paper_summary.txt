@@ -1,0 +1,138 @@
+Deep Analysis and Summary of "Access Path Selection in a Relational Database Management System" (Selinger et al., 1979)
+This foundational paper from the IBM System R project describes the query optimizer for a relational DBMS using SQL. It introduced core techniques still used in modern relational optimizers (e.g., cost-based optimization, selectivity estimation, join ordering, and interesting orders). The work shifted databases from procedural access to declarative queries while maintaining high performance.
+1. Core Problem and Architecture
+In SQL, users specify what data they want (via predicates in WHERE, joins in FROM, etc.) without specifying how to retrieve it. The optimizer must choose:
+
+Access paths for single tables (segment scan vs. index scan).
+Join order and join methods for multi-table queries.
+Plans for nested (correlated) subqueries.
+
+Processing Pipeline:
+
+Parsing → Query block(s) with SELECT, FROM, WHERE tree.
+Optimization (focus of paper): Catalog lookup (stats + access paths), semantic checks, access path selection, produce ASL (Access Specification Language) plan.
+Code Generation → Machine code using templates.
+Execution → Uses RSS (Research Storage System) via RSI (tuple-at-a-time interface).
+
+RSS stores tuples on 4KB pages in segments. Key access methods:
+
+Segment scan: Full scan of relation pages (touches TCARD pages for the relation).
+Index scan: B-tree indexes (clustered or non-clustered). Supports sargable predicates (SARGS) pushed down for early filtering.
+
+Clustered index: Data pages match index order → each data page touched once. Non-clustered can require one page fetch per tuple (worst case).
+2. Cost Model
+COST = PAGE FETCHES + W × (RSI CALLS)
+
+Balances I/O and CPU (RSI calls approximate CPU as most time is spent in RSS).
+W is tunable.
+
+Statistics (maintained via UPDATE STATISTICS):
+
+Relation: NCARD (tuples), TCARD (pages), P (fraction of segment pages).
+Index: ICARD (distinct keys), NINDX (index pages).
+
+Selectivity Factors (F) (Table 1): Crucial innovation for estimating result cardinality.
+
+Equality on indexed column: 1/ICARD.
+Range/BETWEEN: interpolation or defaults (1/3, 1/4).
+Column=column: 1/MAX(ICARDs).
+AND/OR/NOT: multiplicative/additive (assumes independence).
+Subqueries: based on subquery cardinality.
+
+Query Cardinality (QCARD) = product of relation cardinalities × product of all F factors.
+RSICARD = similar but only sargable factors (applied in RSS).
+Interesting Orders: Orders produced by indexes/sorts that match GROUP BY, ORDER BY, or equi-join columns. Optimizer saves cheapest plan per interesting order (plus unordered) and prunes others. Equivalence classes reduce redundancy (e.g., transitive joins on same column).
+3. Single-Relation Access Paths (Table 2)
+For each index + segment scan, compute cost. Choose cheapest per interesting order + overall cheapest unordered.
+
+Unique index + equality: ~1+1+W (very cheap).
+Clustered matching index: F × (NINDX + TCARD) + W×RSICARD.
+Non-clustered: Often F × (NINDX + NCARD) due to random I/O (or buffer check).
+Segment scan: TCARD/P + W×RSICARD.
+
+Compares index plan + sort (if needed for interesting order) vs. cheapest + sort.
+4. Joins (Section 5) — Major Contribution
+Blasgen & Eswaran (1976) showed two methods dominate for most sizes:
+1. Nested Loops:
+
+Outer scan → for each outer tuple, open inner scan (with join predicate as SARG if possible).
+Cost: C_outer + N_outer × C_inner.
+Flexible; any access path on inner.
+
+2. Merge Scan (for equi-joins):
+
+Both sides sorted on join column (or already in order).
+Merge like merge-sort join: synchronize on join values.
+Cost similar to nested loops but inner scan cheaper (contiguous groups, clustering).
+Often requires sort of one/both sides.
+
+N-way Joins:
+
+Dynamic programming-like: build plans for subsets of tables, extending by one table at a time.
+Join Order Heuristic: Prefer connected joins (avoid Cartesian products early). Only consider orders where new table joins to previous set or is deferred.
+Search tree: For each subset, keep cheapest plan per interesting order (equivalence classes).
+Mix nested loops + merge scans.
+Intermediate composites materialized only if sort needed; otherwise pipelined tuple-at-a-time.
+
+Cost Computation for Joins:
+
+Uses single-table costs.
+For sorted inner: special formula (TEMPPAGES/N + ...).
+Sorting cost includes retrieval + multi-pass sort + temp storage.
+
+Example (Fig. 1-6): EMP ⋈ DEPT ⋈ JOB with predicates. Shows pruning, interesting orders (DNO, JOB), nested vs. merge alternatives, and final tree.
+5. Nested Queries (Section 6)
+
+Non-correlated: Evaluate once upfront (scalar or IN-list temp).
+Correlated: Re-evaluate per outer tuple (or per distinct value if sorted/unique).
+Optimizer pushes evaluation as deep as possible; detects when values repeat to avoid re-execution.
+
+6. Key Innovations & Strengths
+
+Statistics-driven selectivity + independence assumption (common even today; histograms came later).
+Interesting orders + equivalence classes: Avoids unnecessary sorts; powerful for join ordering.
+Integrated CPU/I/O costing.
+Practical heuristics: Join connectivity, tree pruning → feasible for 8+ tables (seconds on 1970s hardware).
+SARGs: Predicate pushdown.
+Validation note: Optimizer often picks true optimum even if absolute costs inaccurate.
+
+Limitations (acknowledged or implicit):
+
+Independence assumption can fail.
+No histograms → poor for skewed data.
+Static optimization (no runtime re-optimization).
+Exhaustive (with pruning) but scales with n! reduced by heuristics.
+Cost model assumes buffer behavior simplistically.
+
+7. Impact
+This paper defined cost-based query optimization for relational systems. Techniques influenced DB2, PostgreSQL, SQL Server, etc. (dynamic programming for join order, selectivity, interesting orders). It proved non-procedural SQL could match procedural performance. System R influenced ANSI SQL and commercial RDBMS.
+Modern Relevance:
+
+Still core of many optimizers.
+Extensions needed: better stats (histograms, samples), cardinality estimation (ML today), adaptive/hybrid execution, parallel/distributed joins, etc.
+Tradeoffs between plan quality and optimization time persist.
+
+
+Three-Page-Level Detailed Summary (Condensed but Deep)
+Introduction & System Context: System R (1975–) was IBM’s relational research DBMS with SQL. Optimizer hides storage details (indexes, clustering) from users. Chooses minimal "total access cost" plan.
+Storage & Access Paths: Tuples on pages in segments. Segment scans vs. B-tree index scans (clustered = data co-located with index leaves). SARGS for early filtering of sargable predicates (column op value, DNF).
+Single Table Optimization:
+
+Gather stats & selectivities.
+For each path (indexes + scan), estimate pages fetched + RSI calls.
+Consider interesting orders (ORDER/GROUP BY).
+Compare: best ordered path vs. (cheapest path + sort cost).
+Formulas favor clustered indexes; account for buffering.
+
+Multi-Table (Joins):
+
+Two methods: Nested Loops (general) and Merge Scan (equi-join, ordered).
+Dynamic programming over subsets: best plans for k-tables → extend to k+1.
+Heuristic prunes Cartesian early.
+Interesting orders include join columns → enables merge without sort.
+Saves per equivalence class → efficient.
+Pipelining when possible; materialization only for sorts.
+
+Nested Queries: Decorrelate where possible; evaluate once or per-outer-tuple (with dedup via sorting).
+Overall: Optimizer builds tree of alternatives, prunes via cost, outputs ASL plan. Cost model pragmatic for era. Empirical results: good plans, low optimization overhead (amortized in compiled programs).
+This paper remains essential reading for understanding query optimization foundations. Its principles—cost estimation, selectivity, dynamic programming with pruning, and order awareness—underpin virtually all modern relational engines.

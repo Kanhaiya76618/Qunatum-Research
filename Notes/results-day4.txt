@@ -1,0 +1,85 @@
+============================================================
+QAOA JOIN ORDER OPTIMIZATION — DAY 4 RESULTS
+Date: May 22, 2026
+============================================================
+
+EXPERIMENTAL CONFIGURATION
+--------------------------
+Problem:           TPC-H Query 5, reduced to 3 tables
+Tables:            customer, orders, lineitem
+Qubits used:       9 (3 tables × 3 positions)
+QUBO penalty:      500.0
+QAOA layers (p):   1
+Classical optimizer: COBYLA, maxiter=50
+Random seed:       42
+Platform:          Qiskit (Python), Google Colab
+
+JOIN COST TABLE (log10 of estimated intermediate sizes)
+-------------------------------------------------------
+customer  ↔ orders:   6.18
+orders    ↔ lineitem: 6.78
+Non-adjacent pairs:   15.00 (penalty value)
+
+----- RESULT 1: CLASSICAL EXACT BASELINE -----
+Solver: NumPyMinimumEigensolver
+Time:           18.31 ms
+Optimal order:  customer → orders → lineitem
+Objective:      -2987.0457
+Status:         Valid permutation, optimal
+
+----- RESULT 2: QAOA p=1 ON STATEVECTOR SIMULATOR (CLEAN) -----
+Sampler: StatevectorSampler (ideal, no noise)
+Time:           103.6 s
+Recovered order: customer → orders → lineitem
+Objective:      -2987.0457
+Match classical: TRUE
+Optimal angles found: gamma = 3.6333, beta = -5.9390
+
+----- RESULT 3: QAOA p=1 WITH SYNTHETIC NOISE MODEL -----
+Backend:        AerSimulator with depolarizing noise
+Noise model:    0.1% single-qubit, 1% two-qubit errors
+Shots:          8192
+
+Noiseless reference run:
+  Most probable bitstring: 000000000
+  Peak probability:        2.01%
+
+Noisy run:
+  Most probable bitstring: 000000000
+  Peak probability:        1.11%
+  Probability degradation: 45% relative reduction
+
+Observation: Both runs show broad probability distributions
+characteristic of QAOA p=1, suggesting deeper circuits would
+be needed for production-quality concentration.
+
+----- RESULT 4: QAOA p=1 ON IBM QUANTUM HARDWARE -----
+Backend:           ibm_kingston (156-qubit superconducting)
+Job ID:            d880hr2s46sc73f8pqtg
+Date submitted:    May 22, 2026
+Queue at submit:   0 jobs
+Shots:             4096
+Transpiled depth:  263
+Transpiled gates:  595 (native: rz, sx, x, cz, id)
+
+Most probable bitstring:  110011001
+Count:                    27 shots (0.66%)
+Decoded order:            orders, lineitem, lineitem
+Valid permutation:        FALSE
+Match classical optimal:  FALSE
+
+Top 5 outcomes:
+  110011001: 27 (0.66%)
+  101111000: 26 (0.63%)
+  000000000: 25 (0.61%)
+  011000011: 25 (0.61%)
+  110000110: 24 (0.59%)
+
+OBSERVATION: Peak probability degraded from 2.01% (clean)
+to 1.11% (synthetic noise) to 0.66% (real hardware).
+This shows synthetic depolarizing noise models underestimate
+the actual decoherence of NISQ-era hardware. The 263-gate
+circuit depth is beyond what current devices can execute
+with usable signal preservation. This motivates either
+(a) hardware-efficient ansatz, (b) error mitigation,
+or (c) deeper QAOA layers with shorter compiled depth.

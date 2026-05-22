@@ -1,0 +1,19 @@
+=== Selinger 1979 — Key Takeaways ===
+Reading date: May 20, 2026
+
+1. The optimizer chooses among "plans" (combinations of access paths
+   and join orders) for declarative SQL queries. The user does not
+   specify how to retrieve data.
+
+2. The cost function is: COST = PAGE FETCHES + W × RSI CALLS
+   Balances I/O and CPU. W is a tunable weight.
+
+3. Selinger's DP avoids trying all N! orderings by:
+   - Building optimal sub-plans for each subset of tables
+   - Reusing sub-plan costs when extending to larger subsets
+   - Keeping cheapest plan per "interesting order" + unordered
+
+4. Complexity is O(3^N) because:
+   - 2^N subsets to consider
+   - O(N) ways to extend each subset
+   - Standard analysis gives 3^N for left-deep search space

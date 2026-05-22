@@ -71,3 +71,49 @@ but its margin shrinks considerably. Increasing circuit depth
 (higher p) would worsen the degradation, suggesting that
 error-mitigation techniques will be necessary before QAOA can be
 deployed for production-grade query optimization on real hardware.
+
+### 4.5 QAOA on Real IBM Quantum Hardware
+
+We submitted the QAOA circuit to `ibm_kingston`, a 156-qubit
+superconducting quantum processor available through the IBM
+Quantum Platform. Transpilation decomposes the abstract QAOA
+gates into the device's native gate set {`rz`, `sx`, `x`, `cz`,
+`id`} and maps them onto the physical qubit topology. The
+resulting transpiled circuit had a depth of 263 layers with 595
+total native gate operations. The most probable measurement
+outcome was the bitstring `110011001`, occurring 27 out of 4096
+shots (0.66%). When decoded, this corresponds to the join order
+`orders` → `lineitem` → `lineitem`, which is an invalid
+permutation as `lineitem` appears twice while `customer` is
+absent from the sequence. Crucially, the measured distribution
+is essentially uniform — 0.66% is barely above the 1/512 ≈ 0.20%
+uniform-random baseline for a 9-qubit system, indicating that
+the 263-layer transpiled depth exceeds the coherent execution
+window of current NISQ hardware. This constitutes our central
+empirical finding: even a minimal three-table QAOA instance loses
+essentially all coherent signal when executed on real hardware,
+because transpilation overhead pushes the effective gate count
+beyond the coherence budget of today's NISQ processors.
+
+### 4.6 Summary and Observations
+
+Across all four configurations, the classical exact solver is the
+clear winner at N = 3: it returns the exact optimum in 18
+milliseconds. Clean QAOA matches that optimum but takes 103
+seconds, approximately 5,600× slower. A realistic depolarizing
+noise model degrades the correct-solution probability by 45%
+relative to the noiseless run. On real IBM Quantum hardware,
+coherent signal collapses entirely, and the output distribution
+becomes indistinguishable from uniform random sampling. The
+progression of peak probabilities tells the story: 100%
+(classical exact) → 2.01% (noiseless QAOA) → 1.11% (noisy
+simulator) → 0.66% (real hardware) — a continuous decay from
+perfect certainty to essentially uniform noise, with each layer
+of realism stripping away more of the apparent quantum advantage.
+The take-home message is clear: at small problem sizes, classical
+methods dominate on every axis — speed, accuracy, and reliability.
+The value of QAOA lies in its asymptotic and theoretical scaling,
+not in present-day practical performance. The substantial gap
+between what simulators promise and what real hardware delivers
+is the central challenge the field must address before quantum
+query optimization can become viable in practice.

@@ -30,3 +30,44 @@ order with no approximation error. The optimal join order was
 Colab CPU runtime. This result serves as the gold-standard
 reference against which all subsequent QAOA experiments are
 compared.
+
+### 4.3 QAOA on Noiseless Simulator
+
+For the noiseless QAOA configuration, we used the
+`StatevectorSampler` with COBYLA as the classical optimizer
+(50 iterations maximum) and a single QAOA layer (p = 1). The
+optimal variational angles found by COBYLA were γ = 3.6333 and
+β = −5.9390. QAOA recovered the same join order as the classical
+baseline (`customer` → `orders` → `lineitem`) with an identical
+objective value of −2987.0457, confirming successful recovery of
+the global optimum. The QAOA simulation took 103.6 s, approximately
+5,600× slower than the classical solver's 18 ms. This validates
+that QAOA correctly solves the QUBO at p = 1 for this small
+instance, while highlighting that the overhead of the variational
+loop (which invokes the quantum circuit simulator once per
+optimizer evaluation) is far higher than direct diagonalization
+at this scale.
+
+### 4.4 QAOA under Simulated Depolarizing Noise
+
+We applied a depolarizing noise model with 0.1% error probability
+on single-qubit gates (`rz`, `rx`, `h`, `x`) and 1% on two-qubit
+`CX` gates, parameters chosen to approximate the gate fidelity
+levels of current IBM superconducting quantum processors. We
+reused the optimal angles from the clean QAOA run (γ = 3.6333,
+β = −5.9390) rather than re-optimizing under noise, because the
+`qiskit-aer` sampler primitive does not natively support the
+high-level `QAOA` gate composite. We manually constructed the QAOA
+circuit with the same variational parameters and executed it
+under the noise model — a standard methodology for isolating the
+effect of hardware noise from variational-optimizer convergence
+behavior. In the noiseless run with 8192 measurement shots, the
+peak measurement probability was 2.01%. Under the depolarizing
+noise model, the same bitstring's probability dropped to 1.11% —
+a 45% relative degradation. This indicates that even mild
+depolarizing noise significantly flattens the QAOA probability
+landscape: the correct solution remains the most probable outcome,
+but its margin shrinks considerably. Increasing circuit depth
+(higher p) would worsen the degradation, suggesting that
+error-mitigation techniques will be necessary before QAOA can be
+deployed for production-grade query optimization on real hardware.

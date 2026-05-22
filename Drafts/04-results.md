@@ -18,3 +18,15 @@ quantum processor. We compare four configurations: (1) a classical
 (p=1, ideal statevector simulation), (3) noisy QAOA (p=1 with 0.1%
 single-qubit and 1% two-qubit depolarizing error on AerSimulator),
 and (4) the same QAOA circuit executed on real IBM quantum hardware.
+
+### 4.2 Classical Exact Baseline
+
+The `NumPyMinimumEigensolver` computes the exact ground state of
+the QUBO Hamiltonian by direct diagonalization of the 2⁹ × 2⁹ =
+512 × 512 Hamiltonian matrix, yielding the provably optimal join
+order with no approximation error. The optimal join order was
+`customer` → `orders` → `lineitem`, with an objective value of
+−2987.0457. The computation took 18.31 ms on a standard Google
+Colab CPU runtime. This result serves as the gold-standard
+reference against which all subsequent QAOA experiments are
+compared.

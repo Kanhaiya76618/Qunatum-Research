@@ -106,3 +106,22 @@ terms dominate by several orders of magnitude, the join-cost
 differences become numerically negligible within the objective
 function, and the variational optimizer effectively ignores plan
 quality and focuses only on feasibility.
+
+### 3.5 QAOA Configuration
+
+We used a single QAOA layer (p = 1) because deeper circuits
+exceed the coherence times of current NISQ devices and render
+classical simulation time impractical for any non-trivial system
+size. The classical optimizer was COBYLA with a maximum of 50
+iterations, a gradient-free optimizer well-suited for noisy
+quantum objective functions where finite-difference gradient
+estimates would be unreliable. We compared four execution
+configurations: the classical `NumPyMinimumEigensolver` (exact
+baseline), Qiskit's `StatevectorSampler` (noiseless ideal-state
+simulation), `AerSimulator` with a depolarizing noise model
+approximating IBM-device fidelities (noisy simulation), and the
+`ibm_kingston` 156-qubit superconducting processor accessed via
+Qiskit IBM Runtime. All experiments used a fixed random seed of
+42 to ensure reproducibility, with 8192 measurement shots
+collected per noisy-simulation run and 4096 shots per
+real-hardware execution.

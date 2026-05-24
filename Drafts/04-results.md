@@ -117,3 +117,34 @@ not in present-day practical performance. The substantial gap
 between what simulators promise and what real hardware delivers
 is the central challenge the field must address before quantum
 query optimization can become viable in practice.
+
+The contributions of this paper are as follows. (1) We formulate
+the join order selection problem as a QUBO instance using one-hot
+positional encoding, requiring N² binary variables for N tables,
+with three additive Hamiltonian components: a row constraint
+enforcing that each table appears at exactly one position, a
+column constraint enforcing that each position holds exactly one
+table, and a cost term encoding the estimated intermediate-result
+cardinality for adjacent join pairs. (2) We implement QAOA at
+circuit depth p = 1 on IBM's Qiskit platform and evaluate it
+across four configurations: a classical `NumPyMinimumEigensolver`
+(exact baseline), an ideal `StatevectorSampler` (noiseless QAOA),
+an `AerSimulator` with 0.1%/1% depolarizing noise, and the real
+`ibm_kingston` 156-qubit superconducting processor via Qiskit
+IBM Runtime. (3) On the noiseless simulator, QAOA recovers
+exactly the same optimal join order (`customer` → `orders` →
+`lineitem`) and objective value as the classical exact solver,
+confirming that the QUBO formulation correctly encodes the join
+ordering problem. (4) On real IBM hardware, the transpiled circuit
+reaches a depth of 263 layers (595 total native gate operations),
+and the output distribution is essentially uniform — the most
+probable bitstring appears in only 0.66% of 4096 shots, barely
+above the 1/512 ≈ 0.20% random baseline — empirically quantifying
+the coherence gap of current NISQ hardware. (5) A gate-count
+scaling analysis (Figure 3) shows that classical Selinger DP
+scales as O(3^N) while QAOA's logical gate count scales
+polynomially as O(N⁴), with the crossover occurring at N ≈ 9 —
+squarely within the range of 10–25 tables routinely encountered
+in real data-warehouse workloads — motivating the asymptotic
+promise of the quantum approach despite present hardware
+limitations.

@@ -57,7 +57,7 @@ time of execution.
 Even though classical methods dominate at small N, the polynomial
 qubit scaling (N²) versus the exponential classical operation
 count (3^N) means that QAOA's logical gate count drops below
-classical DP's operation count near N ≈ 18, though the practical
+classical DP's operation count near N ≈ 9, though the practical
 wall-clock crossover on real hardware lies considerably later.
 This range is routinely encountered in data-warehouse and
 analytical workloads, where queries joining 20 or more tables are

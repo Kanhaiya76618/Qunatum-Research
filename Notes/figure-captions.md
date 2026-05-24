@@ -18,12 +18,17 @@ The progression quantifies the gap between simulator promise and
 NISQ-hardware reality.
 
 ## Figure 3
-Fig. 3: Asymptotic scaling of three join-ordering methods plotted
-on a logarithmic operation count (y-axis) versus number of tables
-N (x-axis). Exhaustive search grows factorially (N!), classical
-Selinger dynamic programming grows exponentially (3^N), while
-QAOA's gate count grows polynomially as 2·N^4. The curves cross
-near N≈18, beyond which QAOA's quantum resource requirements
-become smaller than classical DP's classical operation count.
-The gold star marks our experimental N=3 instance, where
-classical methods remain decisively more efficient.
+Fig. 3: Asymptotic scaling of three join-ordering methods on
+a logarithmic operation count (y-axis) versus number of tables N
+(x-axis). Naive exhaustive search grows factorially (N!),
+classical Selinger dynamic programming grows exponentially (3^N),
+and QAOA's logical gate count at p = 2 grows polynomially (2·N⁴).
+Two crossovers emerge: Selinger DP overtakes exhaustive search at
+N ≈ 8, marking the 1979 algorithmic breakthrough; and QAOA's
+logical gate count drops below DP's operation count at N ≈ 9,
+marking the asymptotic threshold beyond which quantum optimization
+becomes attractive in principle. Real-hardware wall-clock
+crossover lies considerably later due to variational-loop
+overhead, shot noise, and queue latency. Our N = 3 experiment
+falls in the classical-favored regime, where direct
+diagonalization is ~5,600× faster than noiseless QAOA simulation.
